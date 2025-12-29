@@ -1,0 +1,3 @@
+export const BILLION_THRESHOLD = 1000000000000;
+export const MILLION_THRESHOLD = 1000000;
+export const DECIMAL_PLACES = 2;

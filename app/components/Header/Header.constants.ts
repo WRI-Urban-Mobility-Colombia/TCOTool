@@ -1,0 +1,10 @@
+export const SHOW_LOGO = false;
+
+export const HEADER_SIZES = {
+  LOGO_WIDTH: 91,
+  LOGO_HEIGHT: 56,
+  SEARCH_ICON_WIDTH: 24,
+  SEARCH_ICON_HEIGHT: 24,
+  EXPORT_ICON_WIDTH: 16,
+  EXPORT_ICON_HEIGHT: 16,
+} as const;
