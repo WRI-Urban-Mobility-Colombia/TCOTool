@@ -1,6 +1,6 @@
 import type { DownloadModalFormData } from './DownloadModal.types';
 
-export const TITLE_TEXT = 'Descargar publicación';
+export const TITLE_TEXT = 'Descargar resultados del ejercicio';
 
 export const MAX_RATING = 10;
 

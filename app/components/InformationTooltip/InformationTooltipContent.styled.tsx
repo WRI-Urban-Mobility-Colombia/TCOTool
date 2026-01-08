@@ -6,6 +6,9 @@ export function TypologyTooltip() {
   return (
     <>
       <TooltipContentParagraph>
+        <strong>Van</strong>: Van especial de xx pasajeros. 
+        <br />
+        <br />
         <strong>Busetón</strong>: Bus urbano de 9 metros de largo, en promedio.
         <br />
         <br />
