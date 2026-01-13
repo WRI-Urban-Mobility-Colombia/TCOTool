@@ -6,3 +6,10 @@ export interface ChartsTooltipProps {
   y: number;
   year?: number;
 }
+
+export interface ChartsTooltipContainerProps {
+  children: React.ReactNode;
+  x: number;
+  y: number;
+  color: string;
+}

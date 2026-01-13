@@ -1,6 +1,8 @@
-import { BusRow } from '@/lib/utils/csvReader';
+import { currencyFormatChanger } from '@/lib/utils';
 import {
+  ACValue,
   IncentiveType,
+  IncentiveEligibility,
   RiskIncrease,
   SpecialEligibility,
   TECHNOLOGY_VALUES,
@@ -8,85 +10,68 @@ import {
 } from '../Calculator/CalculatorForm.constants';
 import type { CalculatorFormData } from '../Calculator/CalculatorForm.types';
 import { extractNumericValue } from '@/lib/utils/formatters';
-import { DIESEL_MULTIPLIER, INCENTIVE_DIESEL, YEARS } from './ResultsSection.constants';
+import {
+  AC_PERCENTAGE,
+  DIESEL_MULTIPLIER,
+  INCENTIVE_DIESEL,
+  YEARS,
+  InputTypes,
+  IPC,
+  INICIAL_MULTIPLIER,
+  PRICING_INCREMENT_RISK,
+  PERCENTAGE_DIVISOR,
+  DECIMAL_PLACES,
+  RISK_INCREMENT_YEARS,
+  YEAR_NUMBERS,
+} from './ResultsSection.constants';
+import type {
+  BusRow,
+  YearMultiplier,
+  YearMultiplierWithPrice,
+  YearMultiplierWithMaintenanceCost,
+  YearMultiplierWithConsumptionCost,
+  OpexTotalResult,
+  GnvOpexTotalResult,
+  ElectricOpexTotalResult,
+  ChartTechnologyDataPoint,
+  DieselOpexDataResult,
+  GnvOpexDataResult,
+  ElectricOpexDataResult,
+  CalculateDieselFinexResultParams,
+  CalculateFinexResultParams,
+  AddPriceScenarioToMultipliersParams,
+  GetAdditionalCostParams,
+  CalculateDieselMaintenanceCostParams,
+  CalculateGnvMaintenanceCostParams,
+  CalculateElectricMaintenanceCostParams,
+  CalculateDieselConsumptionCostParams,
+  CalculateGnvConsumptionCostParams,
+  CalculateElectricConsumptionCostParams,
+  GetFinalInvestDieselParams,
+  GetFinalInvestGnvParams,
+  GetFinalInvestElectricParams,
+  GetBusDataByTechnologyParams,
+  GetCostPerKmResultParams,
+  CalculateCostPerKmByYearParams,
+  CombineChartDataParams,
+  GetIncentiveAmountParams,
+} from './ResultsSection.types';
 
-export const IPC = {
-  SECOND_YEAR: 0.07,
-  THIRD_YEAR: 0.05,
-  ALL_YEARS: 0.03,
-} as const;
-
-export const INICIAL_MULTIPLIER = 1;
-
-export const PRICING_INCREMENT_RISK = 0.25;
-
-export type YearMultiplier = {
-  year: number;
-  multiplier: number;
-};
-
-export type YearMultiplierWithPrice = {
-  year: number;
-  multiplier: number;
-  priceScenario: number;
-};
-
-export type YearMultiplierWithMaintenanceCost = {
-  year: number;
-  multiplier: number;
-  priceScenario: number;
-  maintenanceCost: number;
-};
-
-export type YearMultiplierWithConsumptionCost = {
-  year: number;
-  multiplier: number;
-  priceScenario: number;
-  maintenanceCost: number;
-  consumptionCost: number;
-};
-
-export type YearFinex = {
-  year: number;
-  invest: number;
-  interest: number;
-};
-
-export type OpexTotalResult = {
-  totalDieselMaintenance: number;
-  totalDieselConsumption: number;
-  dieselOpex: number;
-};
-
-export type GnvOpexTotalResult = {
-  totalGnvMaintenance: number;
-  totalGnvConsumption: number;
-  gnvOpex: number;
-};
-
-export type ElectricOpexTotalResult = {
-  totalElectricMaintenance: number;
-  totalElectricConsumption: number;
-  electricOpex: number;
-};
-
-export type TechnologyTypeForChart = TechnologyType;
-
-export type ChartTechnologyDataPoint = {
-  [key in TechnologyTypeForChart]?: number;
-};
+export function createFormatValueLabel(currencyPrefix: string) {
+  return (value: number) => currencyFormatChanger(value, currencyPrefix);
+}
 
 export const addIncrementRiskYear = (dieselCOPGallon: string): number => {
   switch (dieselCOPGallon) {
     case RiskIncrease.shortTerm:
-      return 3;
+      return RISK_INCREMENT_YEARS.SHORT_TERM;
     case RiskIncrease.mediumTerm:
-      return 7;
+      return RISK_INCREMENT_YEARS.MEDIUM_TERM;
     case RiskIncrease.longTerm:
-      return 10;
+      return RISK_INCREMENT_YEARS.LONG_TERM;
     case RiskIncrease.none:
     default:
-      return 0;
+      return RISK_INCREMENT_YEARS.NONE;
   }
 };
 
@@ -95,36 +80,39 @@ export const generateYearMultipliers = (increaseRiskDieselCOPGallon: string): Ye
   const multipliers: YearMultiplier[] = [];
   let currentMultiplier = INICIAL_MULTIPLIER;
 
-  for (let year = 1; year <= YEARS; year++) {
-    if (year === 1) {
+  for (let year = YEAR_NUMBERS.FIRST; year <= YEARS; year++) {
+    if (year === YEAR_NUMBERS.FIRST) {
       currentMultiplier = INICIAL_MULTIPLIER;
-    } else if (year === 2) {
+    } else if (year === YEAR_NUMBERS.SECOND) {
       currentMultiplier = currentMultiplier + IPC.SECOND_YEAR;
-    } else if (year === 3) {
+    } else if (year === YEAR_NUMBERS.THIRD) {
       currentMultiplier = currentMultiplier + IPC.THIRD_YEAR;
     } else {
       currentMultiplier = currentMultiplier + IPC.ALL_YEARS;
     }
 
-    if (year === incrementRiskYear && incrementRiskYear > 0) {
+    if (year === incrementRiskYear && incrementRiskYear > RISK_INCREMENT_YEARS.NONE) {
       currentMultiplier = currentMultiplier + PRICING_INCREMENT_RISK;
     }
 
     multipliers.push({
       year,
-      multiplier: +currentMultiplier.toFixed(2),
+      multiplier: +currentMultiplier.toFixed(DECIMAL_PLACES),
     });
   }
 
   return multipliers;
 };
 
-export const calculateDieselFinexResult = (finalInvestDiesel: number, interestRate: number): number => {
+export const calculateDieselFinexResult = ({
+  finalInvestDiesel,
+  interestRate,
+}: CalculateDieselFinexResultParams): number => {
   const capital = finalInvestDiesel / YEARS;
   let currentInvest = finalInvestDiesel;
   let finexTotal = 0;
 
-  for (let year = 1; year <= YEARS; year++) {
+  for (let year = YEAR_NUMBERS.FIRST; year <= YEARS; year++) {
     const invest = currentInvest - capital;
     const interest = invest * interestRate;
 
@@ -135,11 +123,7 @@ export const calculateDieselFinexResult = (finalInvestDiesel: number, interestRa
   return finexTotal;
 };
 
-export const calculateFinexResult = (
-  results: CalculatorFormData,
-  finalInvest: number,
-  technologyType: TechnologyType
-): number => {
+export const calculateFinexResult = ({ results, finalInvest, technologyType }: CalculateFinexResultParams): number => {
   const capital = finalInvest / YEARS;
   let currentInvest = finalInvest;
   let finexTotal = 0;
@@ -154,12 +138,12 @@ export const calculateFinexResult = (
     (technologyType === TechnologyType.gnv && specialEligibility === SpecialEligibility.gnvAndElectric);
 
   if (shouldUseSpecialRate) {
-    interestRate = +specialRateEA / 100;
+    interestRate = +specialRateEA / PERCENTAGE_DIVISOR;
   } else {
-    interestRate = +interestEA / 100;
+    interestRate = +interestEA / PERCENTAGE_DIVISOR;
   }
 
-  for (let year = 1; year <= YEARS; year++) {
+  for (let year = YEAR_NUMBERS.FIRST; year <= YEARS; year++) {
     const invest = currentInvest - capital;
     const interest = invest * interestRate;
 
@@ -170,22 +154,22 @@ export const calculateFinexResult = (
   return finexTotal;
 };
 
-export const addPriceScenarioToMultipliers = (
-  yearMultipliers: YearMultiplier[],
-  initialPrice: number
-): YearMultiplierWithPrice[] => {
+export const addPriceScenarioToMultipliers = ({
+  yearMultipliers,
+  initialPrice,
+}: AddPriceScenarioToMultipliersParams): YearMultiplierWithPrice[] => {
   return yearMultipliers.map((item) => ({
     year: item.year,
     multiplier: item.multiplier,
-    priceScenario: +(initialPrice * item.multiplier).toFixed(2),
+    priceScenario: +(initialPrice * item.multiplier).toFixed(DECIMAL_PLACES),
   }));
 };
 
-export const getAdditionalCost = (
-  additionalOperatingExpenses: { type: string; quantity: string },
-  opex: number,
-  additionalYearMultipliers: YearMultiplier[]
-): number => {
+export const getAdditionalCost = ({
+  additionalOperatingExpenses,
+  opex,
+  additionalYearMultipliers,
+}: GetAdditionalCostParams): number => {
   const { type, quantity } = additionalOperatingExpenses;
 
   switch (type) {
@@ -197,7 +181,7 @@ export const getAdditionalCost = (
       return Math.round(total);
     }
     case 'percentage': {
-      const percentage = +quantity / 100;
+      const percentage = +quantity / PERCENTAGE_DIVISOR;
       return Math.round(opex * percentage);
     }
     case 'none':
@@ -206,10 +190,10 @@ export const getAdditionalCost = (
   }
 };
 
-export const calculateDieselMaintenanceCost = (
-  results: CalculatorFormData,
-  dieselYearMultipliersWithPrice: YearMultiplierWithPrice[]
-): YearMultiplierWithMaintenanceCost[] => {
+export const calculateDieselMaintenanceCost = ({
+  results,
+  dieselYearMultipliersWithPrice,
+}: CalculateDieselMaintenanceCostParams): YearMultiplierWithMaintenanceCost[] => {
   const { technology, annualKilometers, busesNumber } = results;
   const { validationMaintenancePerKilometer } = technology;
   const dieselCOPKm = +validationMaintenancePerKilometer.dieselCOPKm;
@@ -220,14 +204,14 @@ export const calculateDieselMaintenanceCost = (
     year: item.year,
     multiplier: item.multiplier,
     priceScenario: item.priceScenario,
-    maintenanceCost: +(dieselCOPKm * item.multiplier * annualKm * buses).toFixed(2),
+    maintenanceCost: +(dieselCOPKm * item.multiplier * annualKm * buses).toFixed(DECIMAL_PLACES),
   }));
 };
 
-export const calculateGnvMaintenanceCost = (
-  results: CalculatorFormData,
-  gnvYearMultipliersWithPrice: YearMultiplierWithPrice[]
-): YearMultiplierWithMaintenanceCost[] => {
+export const calculateGnvMaintenanceCost = ({
+  results,
+  gnvYearMultipliersWithPrice,
+}: CalculateGnvMaintenanceCostParams): YearMultiplierWithMaintenanceCost[] => {
   const { technology, annualKilometers, busesNumber } = results;
   const { validationMaintenancePerKilometer } = technology;
   const gasCOPKm = +validationMaintenancePerKilometer.gasCOPKm;
@@ -238,14 +222,14 @@ export const calculateGnvMaintenanceCost = (
     year: item.year,
     multiplier: item.multiplier,
     priceScenario: item.priceScenario,
-    maintenanceCost: +(gasCOPKm * item.multiplier * annualKm * buses).toFixed(2),
+    maintenanceCost: +(gasCOPKm * item.multiplier * annualKm * buses).toFixed(DECIMAL_PLACES),
   }));
 };
 
-export const calculateElectricMaintenanceCost = (
-  results: CalculatorFormData,
-  electricYearMultipliersWithPrice: YearMultiplierWithPrice[]
-): YearMultiplierWithMaintenanceCost[] => {
+export const calculateElectricMaintenanceCost = ({
+  results,
+  electricYearMultipliersWithPrice,
+}: CalculateElectricMaintenanceCostParams): YearMultiplierWithMaintenanceCost[] => {
   const { technology, annualKilometers, busesNumber } = results;
   const { validationMaintenancePerKilometer } = technology;
   const electricityCOPKm = +validationMaintenancePerKilometer.electricityCOPKm;
@@ -256,15 +240,15 @@ export const calculateElectricMaintenanceCost = (
     year: item.year,
     multiplier: item.multiplier,
     priceScenario: item.priceScenario,
-    maintenanceCost: +(electricityCOPKm * item.multiplier * annualKm * buses).toFixed(2),
+    maintenanceCost: +(electricityCOPKm * item.multiplier * annualKm * buses).toFixed(DECIMAL_PLACES),
   }));
 };
 
-export const calculateDieselConsumptionCost = (
-  results: CalculatorFormData,
-  dieselMaintenanceCosts: YearMultiplierWithMaintenanceCost[],
-  finalDieselTechnologyConsumption: number
-): YearMultiplierWithConsumptionCost[] => {
+export const calculateDieselConsumptionCost = ({
+  results,
+  dieselMaintenanceCosts,
+  finalDieselTechnologyConsumption,
+}: CalculateDieselConsumptionCostParams): YearMultiplierWithConsumptionCost[] => {
   const { annualKilometers, busesNumber } = results;
   const annualKm = +annualKilometers;
   const buses = +busesNumber;
@@ -272,7 +256,7 @@ export const calculateDieselConsumptionCost = (
   return dieselMaintenanceCosts.map((item) => {
     const consumptionCost =
       finalDieselTechnologyConsumption > 0
-        ? +(item.priceScenario / finalDieselTechnologyConsumption) * annualKm * buses
+        ? (item.priceScenario / finalDieselTechnologyConsumption) * annualKm * buses
         : 0;
 
     return {
@@ -280,7 +264,7 @@ export const calculateDieselConsumptionCost = (
       multiplier: item.multiplier,
       priceScenario: item.priceScenario,
       maintenanceCost: item.maintenanceCost,
-      consumptionCost: +consumptionCost.toFixed(2),
+      consumptionCost: +consumptionCost.toFixed(DECIMAL_PLACES),
     };
   });
 };
@@ -296,7 +280,7 @@ export const calculateDieselOpexTotal = (
     return accumulator + item.consumptionCost;
   }, 0);
 
-  const dieselOpex = +(totalDieselMaintenance + totalDieselConsumption).toFixed(2);
+  const dieselOpex = +(totalDieselMaintenance + totalDieselConsumption).toFixed(DECIMAL_PLACES);
 
   return {
     totalDieselMaintenance,
@@ -305,25 +289,57 @@ export const calculateDieselOpexTotal = (
   };
 };
 
-export const calculateGnvConsumptionCost = (
-  results: CalculatorFormData,
-  gnvMaintenanceCosts: YearMultiplierWithMaintenanceCost[],
-  finalGnvTechnologyConsumption: number
-): YearMultiplierWithConsumptionCost[] => {
+export const getDieselOpexData = (results: CalculatorFormData): DieselOpexDataResult => {
+  const { fuel, ac } = results;
+  const { increaseRisk, price } = fuel;
+  const percentageByAC = ac === ACValue.yes ? AC_PERCENTAGE.YES : AC_PERCENTAGE.NO;
+
+  const dieselYearMultipliers = generateYearMultipliers(increaseRisk.dieselCOPGallon);
+  const dieselYearMultipliersWithPrice = addPriceScenarioToMultipliers({
+    yearMultipliers: dieselYearMultipliers,
+    initialPrice: +price.dieselCOPGallon,
+  });
+  const dieselMaintenanceCosts = calculateDieselMaintenanceCost({
+    results,
+    dieselYearMultipliersWithPrice,
+  });
+  const dieselTechnologyConsumption = +results.consumptionUnitKm.consumptionValidationKmUnitAc.dieselKmGallon || 0;
+  const finalDieselTechnologyConsumption = dieselTechnologyConsumption * percentageByAC;
+  const dieselConsumptionCosts = calculateDieselConsumptionCost({
+    results,
+    dieselMaintenanceCosts,
+    finalDieselTechnologyConsumption,
+  });
+  const { totalDieselMaintenance, totalDieselConsumption, dieselOpex } =
+    calculateDieselOpexTotal(dieselConsumptionCosts);
+
+  return {
+    dieselConsumptionCosts,
+    totalDieselMaintenance,
+    totalDieselConsumption,
+    dieselOpex,
+  };
+};
+
+export const calculateGnvConsumptionCost = ({
+  results,
+  gnvMaintenanceCosts,
+  finalGnvTechnologyConsumption,
+}: CalculateGnvConsumptionCostParams): YearMultiplierWithConsumptionCost[] => {
   const { annualKilometers, busesNumber } = results;
   const annualKm = +annualKilometers;
   const buses = +busesNumber;
 
   return gnvMaintenanceCosts.map((item) => {
     const consumptionCost =
-      finalGnvTechnologyConsumption > 0 ? +(item.priceScenario / finalGnvTechnologyConsumption) * annualKm * buses : 0;
+      finalGnvTechnologyConsumption > 0 ? (item.priceScenario / finalGnvTechnologyConsumption) * annualKm * buses : 0;
 
     return {
       year: item.year,
       multiplier: item.multiplier,
       priceScenario: item.priceScenario,
       maintenanceCost: item.maintenanceCost,
-      consumptionCost: +consumptionCost.toFixed(2),
+      consumptionCost: +consumptionCost.toFixed(DECIMAL_PLACES),
     };
   });
 };
@@ -337,7 +353,7 @@ export const calculateGnvOpexTotal = (gnvConsumptionCosts: YearMultiplierWithCon
     return accumulator + item.consumptionCost;
   }, 0);
 
-  const gnvOpex = +(totalGnvMaintenance + totalGnvConsumption).toFixed(2);
+  const gnvOpex = +(totalGnvMaintenance + totalGnvConsumption).toFixed(DECIMAL_PLACES);
 
   return {
     totalGnvMaintenance,
@@ -346,11 +362,39 @@ export const calculateGnvOpexTotal = (gnvConsumptionCosts: YearMultiplierWithCon
   };
 };
 
-export const calculateElectricConsumptionCost = (
-  results: CalculatorFormData,
-  electricMaintenanceCosts: YearMultiplierWithMaintenanceCost[],
-  finalElectricTechnologyConsumption: number
-): YearMultiplierWithConsumptionCost[] => {
+export const getGnvOpexData = (results: CalculatorFormData): GnvOpexDataResult => {
+  const { fuel, ac } = results;
+  const { increaseRisk, price } = fuel;
+  const percentageByAC = ac === ACValue.yes ? AC_PERCENTAGE.YES : AC_PERCENTAGE.NO;
+
+  const gnvYearMultipliers = generateYearMultipliers(increaseRisk.gasCOPM3);
+  const gnvYearMultipliersWithPrice = addPriceScenarioToMultipliers({
+    yearMultipliers: gnvYearMultipliers,
+    initialPrice: +price.gasCOPM3,
+  });
+  const gnvMaintenanceCosts = calculateGnvMaintenanceCost({ results, gnvYearMultipliersWithPrice });
+  const gnvTechnologyConsumption = +results.consumptionUnitKm.consumptionValidationKmUnitAc.gasKmM3 || 0;
+  const finalGnvTechnologyConsumption = gnvTechnologyConsumption * percentageByAC;
+  const gnvConsumptionCosts = calculateGnvConsumptionCost({
+    results,
+    gnvMaintenanceCosts,
+    finalGnvTechnologyConsumption,
+  });
+  const { totalGnvMaintenance, totalGnvConsumption, gnvOpex } = calculateGnvOpexTotal(gnvConsumptionCosts);
+
+  return {
+    gnvConsumptionCosts,
+    totalGnvMaintenance,
+    totalGnvConsumption,
+    gnvOpex,
+  };
+};
+
+export const calculateElectricConsumptionCost = ({
+  results,
+  electricMaintenanceCosts,
+  finalElectricTechnologyConsumption,
+}: CalculateElectricConsumptionCostParams): YearMultiplierWithConsumptionCost[] => {
   const { annualKilometers, busesNumber } = results;
   const annualKm = +annualKilometers;
   const buses = +busesNumber;
@@ -358,7 +402,7 @@ export const calculateElectricConsumptionCost = (
   return electricMaintenanceCosts.map((item) => {
     const consumptionCost =
       finalElectricTechnologyConsumption > 0
-        ? +(item.priceScenario / finalElectricTechnologyConsumption) * annualKm * buses
+        ? (item.priceScenario / finalElectricTechnologyConsumption) * annualKm * buses
         : 0;
 
     return {
@@ -366,7 +410,7 @@ export const calculateElectricConsumptionCost = (
       multiplier: item.multiplier,
       priceScenario: item.priceScenario,
       maintenanceCost: item.maintenanceCost,
-      consumptionCost: +consumptionCost.toFixed(2),
+      consumptionCost: +consumptionCost.toFixed(DECIMAL_PLACES),
     };
   });
 };
@@ -382,7 +426,7 @@ export const calculateElectricOpexTotal = (
     return accumulator + item.consumptionCost;
   }, 0);
 
-  const electricOpex = +(totalElectricMaintenance + totalElectricConsumption).toFixed(2);
+  const electricOpex = +(totalElectricMaintenance + totalElectricConsumption).toFixed(DECIMAL_PLACES);
 
   return {
     totalElectricMaintenance,
@@ -391,22 +435,101 @@ export const calculateElectricOpexTotal = (
   };
 };
 
-export const getFinalInvestDiesel = (
-  dieselBusData: BusRow | null,
-  trm: string,
-  inputType: string,
-  busetonCostDiesel: string,
-  busesNumber: string
-) => {
+export const getElectricOpexData = (results: CalculatorFormData): ElectricOpexDataResult => {
+  const { fuel, ac } = results;
+  const { increaseRisk, price } = fuel;
+  const percentageByAC = ac === ACValue.yes ? AC_PERCENTAGE.YES : AC_PERCENTAGE.NO;
+
+  const electricYearMultipliers = generateYearMultipliers(increaseRisk.electricityCOPKwh);
+  const electricYearMultipliersWithPrice = addPriceScenarioToMultipliers({
+    yearMultipliers: electricYearMultipliers,
+    initialPrice: +price.electricityCOPKwh,
+  });
+  const electricMaintenanceCosts = calculateElectricMaintenanceCost({
+    results,
+    electricYearMultipliersWithPrice,
+  });
+  const electricTechnologyConsumption = +results.consumptionUnitKm.consumptionValidationKmUnitAc.electricityKmKwh || 0;
+  const finalElectricTechnologyConsumption = electricTechnologyConsumption * percentageByAC;
+  const electricConsumptionCosts = calculateElectricConsumptionCost({
+    results,
+    electricMaintenanceCosts,
+    finalElectricTechnologyConsumption,
+  });
+  const { totalElectricMaintenance, totalElectricConsumption, electricOpex } =
+    calculateElectricOpexTotal(electricConsumptionCosts);
+
+  return {
+    electricConsumptionCosts,
+    totalElectricMaintenance,
+    totalElectricConsumption,
+    electricOpex,
+  };
+};
+
+export const getFinalInvestDiesel = ({ busesData, results, inputType }: GetFinalInvestDieselParams): number => {
+  const { trm, acquisitionCosts, busesNumber } = results;
+  const { busetonCost } = acquisitionCosts;
+  const dieselBusData = getBusDataByTechnology({ busesData, technology: TechnologyType.diesel });
   const dieselBusCost = dieselBusData ? +extractNumericValue(dieselBusData.busCostUSD) : 0;
-  const dieselSelectedBusCost = inputType === 'data-base' ? dieselBusCost : +busetonCostDiesel;
+  const dieselSelectedBusCost = inputType === InputTypes.dataBase ? dieselBusCost : +busetonCost.diesel;
   const busCost = dieselSelectedBusCost * +trm;
   const capexResultDiesel = busCost * DIESEL_MULTIPLIER;
   const finalInvestDiesel = (capexResultDiesel - INCENTIVE_DIESEL) * +busesNumber;
   return finalInvestDiesel;
 };
 
-export function getBusDataByTechnology(busesData: BusRow[], technology: TechnologyType): BusRow | null {
+export const getFinalInvestGnv = ({ busesData, results, inputType }: GetFinalInvestGnvParams): number => {
+  const { trm, acquisitionCosts, busesNumber, eligibility, incentivePercentage, incentiveType, incentiveAmountCOP } =
+    results;
+  const { busetonCost, infrastructure } = acquisitionCosts;
+  const gnvBusData = getBusDataByTechnology({ busesData, technology: TechnologyType.gnv });
+  const gnvBusCost = gnvBusData ? +extractNumericValue(gnvBusData.busCostUSD) : 0;
+  const gnvSelectedBusCost = inputType === InputTypes.dataBase ? gnvBusCost : +busetonCost.gnv;
+  const busCostGnv = gnvSelectedBusCost * +trm;
+  const gnvInfrastructureCost = gnvBusData ? +extractNumericValue(gnvBusData.infrastructureUSD) : 0;
+  const gnvSelectedInfrastructureCost = inputType === InputTypes.dataBase ? gnvInfrastructureCost : +infrastructure.gnv;
+  const infrastructureCostGnv = gnvSelectedInfrastructureCost * +trm;
+  const capexResultGnv = busCostGnv + infrastructureCostGnv;
+  const eligibilityGnv = eligibility === IncentiveEligibility.electric ? 0 : 1;
+  const gnvCapexPercentage = (+incentivePercentage / PERCENTAGE_DIVISOR) * capexResultGnv;
+  const gnvCurrentIncentive = getIncentiveAmount({
+    incentiveType,
+    capexPercentage: gnvCapexPercentage,
+    incentiveAmountCOP,
+  });
+  const gnvIncentive = eligibilityGnv * gnvCurrentIncentive;
+  const finalInvestGnv = (capexResultGnv - gnvIncentive) * +busesNumber;
+  return finalInvestGnv;
+};
+
+export const getFinalInvestElectric = ({ busesData, results, inputType }: GetFinalInvestElectricParams): number => {
+  const { trm, acquisitionCosts, busesNumber, chargersPerBus, incentivePercentage, incentiveType, incentiveAmountCOP } =
+    results;
+  const { busetonCost, infrastructure, battery } = acquisitionCosts;
+  const electricBusData = getBusDataByTechnology({ busesData, technology: TechnologyType.electric });
+  const electricBusCost = electricBusData ? +extractNumericValue(electricBusData.busCostUSD) : 0;
+  const electricSelectedBusCost = inputType === InputTypes.dataBase ? electricBusCost : +busetonCost.electric;
+  const busCostElectric = electricSelectedBusCost * +trm;
+  const electricInfrastructureCost = electricBusData ? +extractNumericValue(electricBusData.infrastructureUSD) : 0;
+  const electricSelectedInfrastructureCost =
+    inputType === InputTypes.dataBase ? electricInfrastructureCost : +infrastructure.electric;
+  const infrastructureCostElectric = electricSelectedInfrastructureCost * +trm * +chargersPerBus;
+  const electricBatteryCost = electricBusData ? +extractNumericValue(electricBusData.batteryUSD) : 0;
+  const electricSelectedBatteryCost = inputType === InputTypes.dataBase ? electricBatteryCost : +battery.electric;
+  const batteryCostElectric = electricSelectedBatteryCost * +trm;
+  const capexResultElectric = busCostElectric + infrastructureCostElectric + batteryCostElectric;
+  const electricCapexPercentage = (+incentivePercentage / PERCENTAGE_DIVISOR) * capexResultElectric;
+  const electricCurrentIncentive = getIncentiveAmount({
+    incentiveType,
+    capexPercentage: electricCapexPercentage,
+    incentiveAmountCOP,
+  });
+  const finalInvestElectric = (capexResultElectric - electricCurrentIncentive) * +busesNumber;
+  return finalInvestElectric;
+};
+
+export function getBusDataByTechnology({ busesData, technology }: GetBusDataByTechnologyParams): BusRow | null {
   const technologyValue = TECHNOLOGY_VALUES[technology];
   const bus = busesData.find((bus) => bus.technology === technologyValue);
   if (!bus) {
@@ -415,31 +538,31 @@ export function getBusDataByTechnology(busesData: BusRow[], technology: Technolo
   return bus;
 }
 
-export const getCostPerKmResult = (invest: number, annualKilometers: string, busesNumber: string): number => {
+export const getCostPerKmResult = ({ invest, annualKilometers, busesNumber }: GetCostPerKmResultParams): number => {
   return invest / (YEARS * +annualKilometers * +busesNumber);
 };
 
-export const calculateCostPerKmByYear = (
-  consumptionCosts: YearMultiplierWithConsumptionCost[],
-  annualKilometers: string,
-  technologyType: TechnologyTypeForChart
-): ChartTechnologyDataPoint[] => {
+export const calculateCostPerKmByYear = ({
+  consumptionCosts,
+  annualKilometers,
+  technologyType,
+}: CalculateCostPerKmByYearParams): ChartTechnologyDataPoint[] => {
   const annualKm = +annualKilometers;
 
   return consumptionCosts.map((item) => {
     const costPerKm = (item.maintenanceCost + item.consumptionCost) / annualKm;
-    return {
-      [technologyType]: +costPerKm.toFixed(2),
-    } as ChartTechnologyDataPoint;
+    const result: ChartTechnologyDataPoint = {};
+    result[technologyType] = +costPerKm.toFixed(DECIMAL_PLACES);
+    return result;
   });
 };
 
-export const combineChartData = (
-  years: number[],
-  dieselData: ChartTechnologyDataPoint[],
-  gnvData: ChartTechnologyDataPoint[],
-  electricData: ChartTechnologyDataPoint[]
-): Array<{ year: number; diesel: number; gnv: number; electric: number }> => {
+export const combineChartData = ({
+  years,
+  dieselData,
+  gnvData,
+  electricData,
+}: CombineChartDataParams): Array<{ year: number; diesel: number; gnv: number; electric: number }> => {
   return years.map((year, index) => ({
     year,
     diesel: dieselData[index]?.diesel ?? 0,
@@ -448,11 +571,11 @@ export const combineChartData = (
   }));
 };
 
-export const getIncentiveAmount = (
-  incentiveType: string,
-  capexPercentage: number,
-  incentiveAmountCOP?: string
-): number => {
+export const getIncentiveAmount = ({
+  incentiveType,
+  capexPercentage,
+  incentiveAmountCOP,
+}: GetIncentiveAmountParams): number => {
   switch (incentiveType) {
     case IncentiveType.percentage:
       return capexPercentage;

@@ -1,38 +1,20 @@
 import type { CalculatorFormData, AcquisitionCostsType } from './CalculatorForm.types';
 
-export const DEFAULT_EMPTY_ACQUISITION_COSTS: AcquisitionCostsType = {
-  busetonCost: {
-    diesel: '',
-    gnv: '',
-    electric: '',
-  },
-  infrastructure: {
-    diesel: '',
-    gnv: '',
-    electric: '',
-  },
-  battery: {
-    diesel: '',
-    gnv: '',
-    electric: '',
-  },
-} as const;
-
 export const DEFAULT_ACQUISITION_COSTS: AcquisitionCostsType = {
   busetonCost: {
     diesel: '',
     gnv: '',
-    electric: '239000',
+    electric: '',
   },
   infrastructure: {
-    diesel: '12000',
-    gnv: '7000',
-    electric: '27500',
+    diesel: '',
+    gnv: '',
+    electric: '',
   },
   battery: {
     diesel: '',
     gnv: '',
-    electric: '32500',
+    electric: '',
   },
 } as const;
 
@@ -45,7 +27,7 @@ export const DEFAULT_VALUES: CalculatorFormData = {
   eligibility: 'gnv-electric',
   incentivePercentage: '90',
   incentiveAmountCOP: '15000',
-  acquisitionCosts: DEFAULT_EMPTY_ACQUISITION_COSTS,
+  acquisitionCosts: DEFAULT_ACQUISITION_COSTS,
   interestEA: '12',
   specialEligibility: 'electric',
   specialRateEA: '10',
@@ -308,3 +290,113 @@ export enum FuelCostsColumnIds {
   price = 'price',
   increaseRisk = 'increaseRisk',
 }
+
+export enum TableInputVariant {
+  base = 'base',
+  textBase = 'text-base',
+  textSm = 'text-sm',
+}
+
+export const TABLE_INPUT_BASE_CLASSNAME =
+  "flex-1 min-w-0 font-['Inter',sans-serif] bg-white text-[#3d3b3b] rounded-[4px] text-right max-w-full w-full" as const;
+
+export const TABLE_INPUT_CLASS = {
+  textBase: 'text-base',
+  textSm: 'text-sm border-0 outline-none disabled:cursor-not-allowed',
+  base: 'border-0 outline-none',
+} as const;
+
+export enum FormInputVariant {
+  base = 'base',
+  flex1 = 'flex1',
+}
+
+export const FORM_INPUT_BASE_CLASSNAME =
+  "font-['Inter',sans-serif] h-[40px] w-full rounded-[4px] border border-solid border-[#c9c9c9] bg-white text-[#3d3b3b] px-3 py-2" as const;
+
+export const FORM_INPUT_CLASS = {
+  base: '',
+  flex1: 'flex-1',
+} as const;
+
+export enum FormSectionGap {
+  small = 'small',
+  large = 'large',
+}
+
+export enum InputType {
+  number = 'number',
+  text = 'text',
+}
+
+export enum ButtonVariant {
+  primary = 'primary',
+  secondary = 'secondary',
+}
+
+export enum ButtonWidthVariant {
+  full = 'full',
+  flex1 = 'flex1',
+}
+
+export const FORM_LABELS = {
+  TITLES: {
+    typology: 'Tipología',
+    busesNumber: 'Número de buses',
+    chargersPerBus: 'Cargadores por bus',
+    trm: 'TRM',
+    incentiveType: 'Tipo de Incentivo',
+    eligibility: 'Elegibilidad',
+    incentivePercentage: 'Porcentaje de incentivo',
+    incentiveAmountCOP: 'Monto de incentivo (COP) por Bus',
+    interestEA: 'Interés E.A.',
+    specialEligibility: 'Eligibilidad Especial',
+    specialRateEA: 'Tasa Especial E.A.',
+    annualKilometers: 'Kilómetros Anuales por Bus',
+    ac: 'A/C',
+    type: 'Tipo',
+    quantity: 'Cantidad',
+    sectionCapital: 'Gasto de Capital',
+    sectionFinancial: 'Gasto Financiero',
+    sectionOperational: 'Gasto Operacional',
+    sectionReference: 'Referencia',
+    acquisitionCost: 'Costo de Adquisición',
+    energyEfficiency: 'Eficiencia Energética',
+    maintenanceCost: 'Costo de Mantenimiento',
+    fuelCosts: 'Costos de Combustibles e Incrementos',
+    validationInsumos: 'Validacion de Insumos',
+  },
+  REQUIRED: {
+    default: 'Este campo es obligatorio',
+  },
+  PLACEHOLDERS: {
+    default: 'Seleccione una opción',
+    busesNumber: 'Ingrese número de buses',
+    chargersPerBus: 'Ingrese cargadores por bus',
+    insertValue: 'Insertar valor',
+    zeroPercent: '0%',
+    zero: '0',
+    insertPercentage: 'Insertar porcentaje',
+    insertDefaultValues: 'Insertar valores predeterminados',
+  },
+  BUTTONS: {
+    back: 'Atrás',
+    continue: 'Continuar',
+    calculate: 'Calcular',
+  },
+} as const;
+
+export const INPUT_VALIDATION = {
+  BUSES_NUMBER_MIN: 1,
+  CHARGERS_PER_BUS_MIN: 0,
+  CHARGERS_PER_BUS_MAX: 1,
+  CHARGERS_PER_BUS_STEP: 0.1,
+  CHARGERS_PER_BUS_DECIMAL_PLACES: 2,
+} as const;
+
+export const TABLE_COLUMN_WIDTHS = {
+  TECHNOLOGY_COLUMN: '33%',
+  VALIDATION_COLUMN_LARGE: '67%',
+  VALIDATION_COLUMN_MEDIUM: '34%',
+  INSUMO_COLUMN: '25%',
+} as const;

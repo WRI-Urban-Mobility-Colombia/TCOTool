@@ -3,6 +3,14 @@ import type { UseFormReturn } from '@/lib/Form/Form.types';
 import type { RequiredFieldsByStep } from './hooks/useEBusFormValidation.types';
 import { percentageToDecimal, extractNumericValue } from '@/lib/utils';
 import {
+  TABLE_INPUT_BASE_CLASSNAME,
+  TableInputVariant,
+  TABLE_INPUT_CLASS,
+  FORM_INPUT_BASE_CLASSNAME,
+  FormInputVariant,
+  FORM_INPUT_CLASS,
+} from './CalculatorForm.constants';
+import {
   SCROLL_ANIMATION_DURATION_MS,
   SCROLL_OFFSET_PX,
   SCROLL_PROGRESS_COMPLETE,
@@ -18,7 +26,7 @@ import {
   TechnologyType,
   TECHNOLOGY_VALUES,
 } from './CalculatorForm.constants';
-import type { BusRow } from '@/lib/utils/csvReader';
+import type { BusRow } from '../Results/ResultsSection.types';
 
 export function createSelectOptionsFromEnum<T extends string | number>(
   enumObject: Record<string, T>,
@@ -286,4 +294,36 @@ export function convertBusesDataToAcquisitionCosts(busesData: BusRow[]): Acquisi
       [TechnologyType.electric]: parseUSDValue(electricBus?.batteryUSD || ''),
     },
   };
+}
+
+export function getTableInputVariantClassName(variant: TableInputVariant = TableInputVariant.base): string {
+  switch (variant) {
+    case TableInputVariant.textBase:
+      return TABLE_INPUT_CLASS.textBase;
+    case TableInputVariant.textSm:
+      return TABLE_INPUT_CLASS.textSm;
+    case TableInputVariant.base:
+    default:
+      return TABLE_INPUT_CLASS.base;
+  }
+}
+
+export function getTableInputClassName(variant: TableInputVariant = TableInputVariant.base): string {
+  const variantClassName = getTableInputVariantClassName(variant);
+  return `${TABLE_INPUT_BASE_CLASSNAME} ${variantClassName}`.trim();
+}
+
+export function getFormInputVariantClassName(variant: FormInputVariant = FormInputVariant.base): string {
+  switch (variant) {
+    case FormInputVariant.flex1:
+      return FORM_INPUT_CLASS.flex1;
+    case FormInputVariant.base:
+    default:
+      return FORM_INPUT_CLASS.base;
+  }
+}
+
+export function getFormInputClassName(variant: FormInputVariant = FormInputVariant.base): string {
+  const variantClassName = getFormInputVariantClassName(variant);
+  return `${variantClassName} ${FORM_INPUT_BASE_CLASSNAME}`.trim();
 }

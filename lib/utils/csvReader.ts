@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parse } from 'csv-parse/sync';
+import type { BusRow } from '@/app/components/Results/ResultsSection.types';
 
 export function getDataDir(): string {
   return path.join(process.cwd(), 'data');
@@ -35,17 +36,6 @@ export function getConsumptionTechnologyCsvPath(): string {
 
 export function getBusesCsvPath(): string {
   return path.join(getDataDir(), 'supuestos_buses.csv');
-}
-
-export interface BusRow {
-  technology: string;
-  typology: string;
-  usefulLife: string;
-  busCostUSD: string;
-  infrastructureUSD: string;
-  batteryUSD: string;
-  consumptionKmUnitDefault: string;
-  maintenanceUSDKm: string;
 }
 
 function normalizeValue(value: string | undefined): string {

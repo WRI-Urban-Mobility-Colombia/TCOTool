@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Input, Button, When } from 'vizonomy';
+import { When } from 'vizonomy';
 import { EBusSelect } from './components/eBusSelect';
-import { EBusButton } from '../EBusButton';
 import { EBusTable } from '../EBusTable';
+import { EBusToggle } from '../EBusToggle';
 import { InformationTooltip } from '../InformationTooltip';
 import {
   formatPercentage,
@@ -14,183 +14,166 @@ import {
   clampMinNumberString,
   clampDecimalRange,
 } from '@/lib/utils';
+import { createDefaultValueFocusHandler } from './CalculatorForm.utils';
+import { useCapexForm } from './hooks/useCapexForm';
 import {
-  TYPLOGY_LABELS,
-  Typology,
+  DEFAULT_VALUES,
+  FormInputVariant,
+  FormSectionGap,
+  FORM_LABELS,
+  InputType,
+  ButtonVariant,
+  ButtonWidthVariant,
   IncentiveType,
-  INCENTIVE_TYPE_LABELS,
-  IncentiveEligibility,
-  INCENTIVE_ELIGIBILITY_LABELS,
-  TechnologyType,
   Currency,
-  CURRENCY_LABELS,
-  FieldTablesId,
-  AcquisitionCostsColumnIds,
+  INPUT_VALIDATION,
 } from './CalculatorForm.constants';
-import { useCurrency } from './CurrencyContext';
-import { createValidacionColumns } from './CalculatorFormColumns';
 import {
-  createSelectOptionsFromEnum,
-  setNestedFormValue,
-  createDefaultValueFocusHandler,
-  createTableData,
-} from './CalculatorForm.utils';
-import { DEFAULT_VALUES } from './CalculatorForm.constants';
-import { InputFormLabel, FormSectionTitle, CapexDescription } from './CalculatorForm.styled';
+  InputFormLabel,
+  FormSectionTitle,
+  CapexDescription,
+  ValuesContainerStyled,
+  FormInput,
+  FormsContainer,
+  FormSection,
+  FormHeaderContainer,
+  FormToggleContainer,
+  FormCurrencyContainer,
+  ShrinkZeroContainer,
+  FormButton,
+} from './CalculatorForm.styled';
 import {
   TypologyTooltip,
   TrmTooltip,
   EligibilityTooltip,
 } from '../InformationTooltip/InformationTooltipContent.styled';
 import { EBusFormField } from './components/EBusFormField';
-import type { UseFormReturn } from '@/lib/Form/Form.types';
-import type { CalculatorFormData, ValidacionTableRow } from './CalculatorForm.types';
+import type { CapexFormProps } from './CalculatorForm.types';
 
-interface CapexFormProps {
-  form: UseFormReturn<CalculatorFormData>;
-  handleContinue: () => void;
-  submitAttempted: boolean;
-  insertDefaultValues: boolean;
-  handleAcquisitionCostsToggle: (value: boolean) => void;
-}
-
-export function CapexForm({
-  form,
-  handleContinue,
-  submitAttempted,
-  insertDefaultValues,
-  handleAcquisitionCostsToggle,
-}: CapexFormProps) {
-  const { currency, setCurrency, getCurrencyPrefix } = useCurrency();
-
-  const validacionTableData = createTableData<ValidacionTableRow>(FieldTablesId.validation, FieldTablesId.technology);
-
-  const typologySelectOptions = createSelectOptionsFromEnum(Typology, TYPLOGY_LABELS);
-  const incentiveTypeSelectOptions = createSelectOptionsFromEnum(IncentiveType, INCENTIVE_TYPE_LABELS);
-  const incentiveEligibilitySelectOptions = createSelectOptionsFromEnum(
-    IncentiveEligibility,
-    INCENTIVE_ELIGIBILITY_LABELS
-  );
-  const currencySelectOptions = createSelectOptionsFromEnum(Currency, CURRENCY_LABELS);
-
-  const handleValidacionInputChange = (column: AcquisitionCostsColumnIds, row: TechnologyType, value: string) => {
-    setNestedFormValue(form, 'acquisitionCosts', column, row, value, true);
-  };
-
-  const validacionColumns = createValidacionColumns({
+export function CapexForm(props: CapexFormProps) {
+  const {
     form,
-    acquisitionCosts: form.values.acquisitionCosts,
-    handleValidacionInputChange,
-    currencyPrefix: getCurrencyPrefix(),
+    handleContinue,
     submitAttempted,
-  });
+    insertDefaultValues,
+    handleAcquisitionCostsToggle,
+    currency,
+    setCurrency,
+    getCurrencyPrefix,
+    validacionTableData,
+    validacionColumns,
+    typologySelectOptions,
+    incentiveTypeSelectOptions,
+    incentiveEligibilitySelectOptions,
+    currencySelectOptions,
+  } = useCapexForm(props);
 
   return (
-    <div className="forms-container">
-      <div className="mb-6 flex flex-col gap-4">
-        <FormSectionTitle>Gasto de Capital</FormSectionTitle>
+    <FormsContainer>
+      <FormSection>
+        <FormSectionTitle>{FORM_LABELS.TITLES.sectionCapital}</FormSectionTitle>
         <CapexDescription />
         <EBusFormField
-          title="Tipología"
+          title={FORM_LABELS.TITLES.typology}
           tooltipText={<TypologyTooltip />}
           required
           value={form.values.typology}
           defaultValue={DEFAULT_VALUES.typology}
           submitAttempted={submitAttempted}
-          requiredMessage="Este campo es obligatorio"
+          requiredMessage={FORM_LABELS.REQUIRED.default}
         >
           <EBusSelect
             value={form.values.typology}
             onChange={(value: string) => form.setValue('typology', value)}
             options={typologySelectOptions}
-            placeholder="Seleccione una opción"
+            placeholder={FORM_LABELS.PLACEHOLDERS.default}
           />
         </EBusFormField>
 
         <EBusFormField
-          title="Número de buses"
+          title={FORM_LABELS.TITLES.busesNumber}
           required
           value={form.values.busesNumber}
           defaultValue={DEFAULT_VALUES.busesNumber}
           submitAttempted={submitAttempted}
-          requiredMessage="Este campo es obligatorio"
+          requiredMessage={FORM_LABELS.REQUIRED.default}
         >
-          <Input
-            type="number"
+          <FormInput
+            type={InputType.number}
             value={form.values.busesNumber}
-            min={1}
+            min={INPUT_VALIDATION.BUSES_NUMBER_MIN}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              const fixedValue = clampMinNumberString(e.target.value, 1);
+              const fixedValue = clampMinNumberString(e.target.value, INPUT_VALIDATION.BUSES_NUMBER_MIN);
               form.setValue('busesNumber', fixedValue);
             }}
-            placeholder="Ingrese número de buses"
+            placeholder={FORM_LABELS.PLACEHOLDERS.busesNumber}
             {...createDefaultValueFocusHandler(form, 'busesNumber')}
-            className="font-['Inter',sans-serif] h-[40px] w-full rounded-[4px] border border-solid border-[#c9c9c9]
-            bg-white text-[#3d3b3b] px-3 py-2"
           />
         </EBusFormField>
 
         <EBusFormField
-          title="Cargadores por bus"
+          title={FORM_LABELS.TITLES.chargersPerBus}
           required
           value={form.values.chargersPerBus}
           defaultValue={DEFAULT_VALUES.chargersPerBus}
           submitAttempted={submitAttempted}
-          requiredMessage="Este campo es obligatorio"
+          requiredMessage={FORM_LABELS.REQUIRED.default}
         >
-          <Input
-            type="number"
+          <FormInput
+            type={InputType.number}
             value={form.values.chargersPerBus}
-            min={0}
-            max={1}
-            step={0.1}
+            min={INPUT_VALIDATION.CHARGERS_PER_BUS_MIN}
+            max={INPUT_VALIDATION.CHARGERS_PER_BUS_MAX}
+            step={INPUT_VALIDATION.CHARGERS_PER_BUS_STEP}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              const fixedValue = clampDecimalRange(e.target.value, 0, 1, 2);
+              const fixedValue = clampDecimalRange(
+                e.target.value,
+                INPUT_VALIDATION.CHARGERS_PER_BUS_MIN,
+                INPUT_VALIDATION.CHARGERS_PER_BUS_MAX,
+                INPUT_VALIDATION.CHARGERS_PER_BUS_DECIMAL_PLACES
+              );
               form.setValue('chargersPerBus', fixedValue);
             }}
-            placeholder="Ingrese cargadores por bus"
+            placeholder={FORM_LABELS.PLACEHOLDERS.chargersPerBus}
             {...createDefaultValueFocusHandler(form, 'chargersPerBus')}
-            className="font-['Inter',sans-serif] h-[40px] w-full rounded-[4px] border border-solid border-[#c9c9c9]
-            bg-white text-[#3d3b3b] px-3 py-2"
           />
         </EBusFormField>
 
         <EBusFormField
-          title="TRM"
+          title={FORM_LABELS.TITLES.trm}
           tooltipText={<TrmTooltip />}
           required
           value={form.values.trm}
           defaultValue={DEFAULT_VALUES.trm}
           submitAttempted={submitAttempted}
-          requiredMessage="Este campo es obligatorio"
+          requiredMessage={FORM_LABELS.REQUIRED.default}
         >
-          <Input
-            type="text"
+          <FormInput
+            variant={FormInputVariant.flex1}
+            type={InputType.text}
             value={form.values.trm}
             formatter={(value: string) => formatCurrency(value, getCurrencyPrefix())}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               form.setValue('trm', extractNumericValue(e.target.value))
             }
             {...createDefaultValueFocusHandler(form, 'trm')}
-            placeholder="Insertar valor"
-            className="flex-1 font-['Inter',sans-serif] h-[40px] w-full rounded-[4px]
-            border border-solid border-[#c9c9c9] bg-white text-[#3d3b3b] px-3 py-2"
+            placeholder={FORM_LABELS.PLACEHOLDERS.insertValue}
           />
         </EBusFormField>
 
         <EBusFormField
-          title="Tipo de Incentivo"
+          title={FORM_LABELS.TITLES.incentiveType}
           required
           value={form.values.incentiveType}
           defaultValue={DEFAULT_VALUES.incentiveType}
           submitAttempted={submitAttempted}
-          requiredMessage="Este campo es obligatorio"
+          requiredMessage={FORM_LABELS.REQUIRED.default}
         >
           <EBusSelect
             value={form.values.incentiveType}
             onChange={(value: string) => form.setValue('incentiveType', value)}
             options={incentiveTypeSelectOptions}
-            placeholder="Seleccione una opción"
+            placeholder={FORM_LABELS.PLACEHOLDERS.default}
           />
         </EBusFormField>
 
@@ -201,122 +184,113 @@ export function CapexForm({
           }
         >
           <EBusFormField
-            title="Elegibilidad"
+            title={FORM_LABELS.TITLES.eligibility}
             tooltipText={<EligibilityTooltip />}
             required
             value={form.values.eligibility}
             defaultValue={DEFAULT_VALUES.eligibility}
             submitAttempted={submitAttempted}
-            requiredMessage="Este campo es obligatorio"
+            requiredMessage={FORM_LABELS.REQUIRED.default}
           >
             <EBusSelect
               value={form.values.eligibility}
               onChange={(value: string) => form.setValue('eligibility', value)}
               options={incentiveEligibilitySelectOptions}
-              placeholder="Seleccione una opción"
+              placeholder={FORM_LABELS.PLACEHOLDERS.default}
             />
           </EBusFormField>
         </When>
 
         <When condition={form.values.incentiveType === IncentiveType.percentage}>
           <EBusFormField
-            title="Porcentaje de incentivo"
+            title={FORM_LABELS.TITLES.incentivePercentage}
             required
             value={form.values.incentivePercentage}
             defaultValue={DEFAULT_VALUES.incentivePercentage}
             submitAttempted={submitAttempted}
-            requiredMessage="Este campo es obligatorio"
+            requiredMessage={FORM_LABELS.REQUIRED.default}
           >
-            <Input
-              type="text"
+            <FormInput
+              type={InputType.text}
               value={form.values.incentivePercentage}
               formatter={formatPercentage}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 form.setValue('incentivePercentage', extractNumericValueWithMax(e.target.value, 100))
               }
               {...createDefaultValueFocusHandler(form, 'incentivePercentage')}
-              placeholder="0%"
-              className="font-['Inter',sans-serif] h-[40px] w-full rounded-[4px] border border-solid border-[#c9c9c9]
-            bg-white text-[#3d3b3b] px-3 py-2"
+              placeholder={FORM_LABELS.PLACEHOLDERS.zeroPercent}
             />
           </EBusFormField>
         </When>
 
         <When condition={form.values.incentiveType === IncentiveType.amountOfMoney}>
           <EBusFormField
-            title="Monto de incentivo (COP) por Bus"
+            title={FORM_LABELS.TITLES.incentiveAmountCOP}
             required
             value={form.values.incentiveAmountCOP}
             defaultValue={DEFAULT_VALUES.incentiveAmountCOP}
             submitAttempted={submitAttempted}
-            requiredMessage="Este campo es obligatorio"
+            requiredMessage={FORM_LABELS.REQUIRED.default}
           >
-            <div className="flex items-center gap-1">
-              <Input
-                type="text"
+            <ValuesContainerStyled>
+              <FormInput
+                variant={FormInputVariant.flex1}
+                type={InputType.text}
                 value={form.values.incentiveAmountCOP}
                 formatter={(value: string) => formatCurrency(value, getCurrencyPrefix())}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   form.setValue('incentiveAmountCOP', extractNumericValue(e.target.value))
                 }
-                placeholder="0"
+                placeholder={FORM_LABELS.PLACEHOLDERS.zero}
                 {...createDefaultValueFocusHandler(form, 'incentiveAmountCOP')}
-                className="flex-1 font-['Inter',sans-serif] h-[40px] w-full rounded-[4px]
-              border border-solid border-[#c9c9c9] bg-white text-[#3d3b3b] px-3 py-2
-             "
               />
-            </div>
+            </ValuesContainerStyled>
           </EBusFormField>
         </When>
-      </div>
+      </FormSection>
 
-      <div className="mb-6 flex flex-col gap-2">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            <InputFormLabel disableTooltip>Costo de Adquisición</InputFormLabel>
-            <div className="flex items-center gap-2">
-              <Button
-                type="default"
+      <FormSection gap={FormSectionGap.small}>
+        <FormHeaderContainer>
+          <FormToggleContainer>
+            <InputFormLabel disableTooltip>{FORM_LABELS.TITLES.acquisitionCost}</InputFormLabel>
+            <ValuesContainerStyled>
+              <EBusToggle
+                label={FORM_LABELS.PLACEHOLDERS.insertDefaultValues}
+                checked={insertDefaultValues}
                 onClick={() => {
                   handleAcquisitionCostsToggle(!insertDefaultValues);
                 }}
-                className="relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors
-                  focus:outline-none"
-                style={{
-                  backgroundColor: insertDefaultValues ? '#F0AB00' : '#c9c9c9',
-                  padding: '2.7px',
-                }}
-              >
-                <span
-                  className={`absolute inline-block h-2.5 w-2.5 transform rounded-full bg-white transition-transform ${
-                    insertDefaultValues ? 'translate-x-[13px]' : 'translate-x-0'
-                  }`}
-                />
-              </Button>
-              <div className="flex items-center gap-1 min-w-0">
-                <span className="text-sm text-[#3d3b3b] whitespace-nowrap">Insertar valores predeterminados</span>
-                <div className="shrink-0">
-                  <InformationTooltip text="" />
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="w-full sm:w-[230px]">
+              />
+              <ShrinkZeroContainer>
+                <InformationTooltip text="" />
+              </ShrinkZeroContainer>
+            </ValuesContainerStyled>
+          </FormToggleContainer>
+          <FormCurrencyContainer>
             <EBusSelect
               value={currency}
               onChange={(value: string) => {
                 setCurrency(value as Currency);
               }}
               options={currencySelectOptions}
-              placeholder="Seleccione una opción"
+              placeholder={FORM_LABELS.PLACEHOLDERS.default}
             />
-          </div>
-        </div>
+          </FormCurrencyContainer>
+        </FormHeaderContainer>
 
-        <EBusTable title="Validacion de Insumos" data={validacionTableData} columns={validacionColumns} />
-      </div>
+        <EBusTable
+          title={FORM_LABELS.TITLES.validationInsumos}
+          data={validacionTableData}
+          columns={validacionColumns}
+        />
+      </FormSection>
 
-      <EBusButton variant="primary" buttonLabel="Continuar" onClick={handleContinue} className="h-[40px] w-full" />
-    </div>
+      <FormButton
+        variant={ButtonVariant.primary}
+        buttonLabel={FORM_LABELS.BUTTONS.continue}
+        onClick={handleContinue}
+        widthVariant={ButtonWidthVariant.full}
+      />
+    </FormsContainer>
   );
 }

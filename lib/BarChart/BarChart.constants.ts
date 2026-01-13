@@ -44,3 +44,17 @@ export const TEXT_HEIGHT = {
   DESCENT_RATIO: 0.2,
   ADDITIONAL_PADDING: 8,
 } as const;
+
+export const DEFAULT_MARGIN = {
+  top: 20,
+  right: 20,
+  bottom: 60,
+  left: 20,
+} as const;
+
+export const DEFAULT_DIMENSIONS = {
+  width: 800,
+  height: 400,
+} as const;
+
+export const BAR_PADDING = 0.1;

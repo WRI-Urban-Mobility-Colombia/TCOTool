@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { DownloadModalFormData } from '@/app/components/Header/DownloadModal/DownloadModal.types';
-import { getCsvFilePath, ensureCsvFileExists, appendUserToCsv } from './route.utils';
+import { saveUserToDatabase } from './route.db.utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,16 +13,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 });
     }
 
-    const csvPath = getCsvFilePath();
+    const result = await saveUserToDatabase({ userData });
 
-    ensureCsvFileExists(csvPath);
-
-    appendUserToCsv(csvPath, userData);
-
-    return NextResponse.json({ success: true, message: 'Usuario guardado correctamente' });
+    return NextResponse.json({
+      success: true,
+      message: 'Usuario guardado correctamente',
+      data: result,
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
-    console.error('API Error al guardar usuario:', err);
+    console.error('API Error al guardar usuario en base de datos:', err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

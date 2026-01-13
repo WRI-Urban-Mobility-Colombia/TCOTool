@@ -8,20 +8,7 @@ import type {
   TooltipData,
   BarChartDimensions,
 } from './BarChart.types';
-
-const DEFAULT_MARGIN = {
-  top: 20,
-  right: 20,
-  bottom: 60,
-  left: 20,
-};
-
-const DEFAULT_DIMENSIONS = {
-  width: 800,
-  height: 400,
-};
-
-const BAR_PADDING = 0.1;
+import { DEFAULT_MARGIN, DEFAULT_DIMENSIONS, BAR_PADDING } from './BarChart.constants';
 
 export const useBarChart = (props: UseBarChartProps): UseBarChartReturn => {
   const {

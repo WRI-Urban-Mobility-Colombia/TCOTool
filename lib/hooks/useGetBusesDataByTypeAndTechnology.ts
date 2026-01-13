@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BUSES_ENDPOINTS, fetchJson } from '@/lib/api.settings';
-import type { BusRow } from '@/lib/utils/csvReader';
+import type { BusRow } from '@/app/components/Results/ResultsSection.types';
 
 interface BusesResponse {
   data: BusRow[];

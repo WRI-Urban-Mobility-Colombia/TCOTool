@@ -1,17 +1,15 @@
 import React from 'react';
-import { Input } from 'vizonomy';
 import type { TableColumn } from 'vizonomy';
 import type {
   ConsumoTableRow,
   TecnologiaTableRow,
   CombustibleTableRow,
-  ConsumptionValidationKmUnitAcProps,
-  ValidationMaintenancePerKilometerProps,
-  CalculatorFormData,
+  ConsumoColumnsProps,
+  TecnologiaColumnsProps,
+  CombustibleColumnsProps,
 } from './CalculatorForm.types';
-import type { UseFormReturn } from '@/lib/Form/Form.types';
 import { formatNumberThousands } from '@/lib/utils';
-import { DollarSignStyled } from './CalculatorForm.styled';
+import { DollarSignStyled, ValuesContainerStyled, TableInput } from './CalculatorForm.styled';
 import { EBusSelect } from './components/eBusSelect';
 import { EBusFormField } from './components/EBusFormField';
 import {
@@ -21,45 +19,13 @@ import {
   FieldTablesId,
   FuelCostsColumnIds,
   TechnologyType,
+  TableInputVariant,
+  TABLE_COLUMN_WIDTHS,
 } from './CalculatorForm.constants';
 import { createSelectOptionsFromEnum, createDefaultValueFocusHandler } from './CalculatorForm.utils';
 
 function SuffixText({ children }: { children: React.ReactNode }) {
   return <span className="shrink-0 font-['Inter',sans-serif] text-[#3d3b3b] whitespace-nowrap">{children}</span>;
-}
-
-interface ConsumoColumnsProps {
-  form: UseFormReturn<CalculatorFormData>;
-  consumptionUnitKm: {
-    consumptionValidationKmUnitAc: ConsumptionValidationKmUnitAcProps;
-  };
-  handleConsumoInputChange: (
-    column: 'consumptionValidationKmUnitAc',
-    row: 'dieselKmGallon' | 'gasKmM3' | 'electricityKmKwh',
-    value: string
-  ) => void;
-  submitAttempted?: boolean;
-  fuelCostToggle: boolean;
-  defaultValues: {
-    dieselKmGallon: string;
-    gasKmM3: string;
-    electricityKmKwh: string;
-  };
-}
-
-interface TecnologiaColumnsProps {
-  form: UseFormReturn<CalculatorFormData>;
-  technology: {
-    validationMaintenancePerKilometer: ValidationMaintenancePerKilometerProps;
-  };
-  handleTecnologiaInputChange: (
-    column: 'validationMaintenancePerKilometer',
-    row: 'dieselCOPKm' | 'gasCOPKm' | 'electricityCOPKm',
-    value: string
-  ) => void;
-  submitAttempted?: boolean;
-  maintenanceToggle: boolean;
-  defaultValues: ValidationMaintenancePerKilometerProps;
 }
 
 export function createConsumoColumns({
@@ -81,7 +47,7 @@ export function createConsumoColumns({
       id: FieldTablesId.consumption,
       key: FieldTablesId.consumption,
       label: 'Tecnología',
-      width: '33%',
+      width: TABLE_COLUMN_WIDTHS.TECHNOLOGY_COLUMN,
       render: (value: string) => (
         <span className="text-xs sm:text-sm font-['Inter',sans-serif] text-[#3d3b3b]">{value}</span>
       ),
@@ -90,7 +56,7 @@ export function createConsumoColumns({
       id: FieldTablesId.validation,
       key: FieldTablesId.validation,
       label: 'Consumo Energético (kilómetros por unidad)',
-      width: '67%',
+      width: TABLE_COLUMN_WIDTHS.VALIDATION_COLUMN_LARGE,
       render: (_value: string | null, row: ConsumoTableRow) => {
         const rowKey = getRowKey(row);
         const rawValue = consumptionUnitKm.consumptionValidationKmUnitAc[rowKey] ?? '';
@@ -112,7 +78,7 @@ export function createConsumoColumns({
         const displayValue = fuelCostToggle ? defaultInputValue : rawValue;
 
         return (
-          <div className="flex items-center gap-1">
+          <ValuesContainerStyled>
             <EBusFormField
               required
               value={displayValue}
@@ -120,7 +86,8 @@ export function createConsumoColumns({
               submitAttempted={submitAttempted ?? false}
               variant="table"
             >
-              <Input
+              <TableInput
+                variant={TableInputVariant.textSm}
                 value={displayValue}
                 disabled={fuelCostToggle}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -130,13 +97,10 @@ export function createConsumoColumns({
                   ? createDefaultValueFocusHandler(form, `consumptionUnitKm.consumptionValidationKmUnitAc.${rowKey}`)
                   : {})}
                 placeholder="Insertar valor"
-                className="flex-1 min-w-0 font-['Inter',sans-serif] text-sm bg-white border-0 outline-none
-                text-[#3d3b3b] rounded-[4px] text-right max-w-full w-full
-                disabled:cursor-not-allowed"
               />
             </EBusFormField>
             <SuffixText>{suffix}</SuffixText>
-          </div>
+          </ValuesContainerStyled>
         );
       },
     },
@@ -162,7 +126,7 @@ export function createTecnologiaColumns({
       id: FieldTablesId.technology,
       key: FieldTablesId.technology,
       label: 'Tecnología',
-      width: '33%',
+      width: TABLE_COLUMN_WIDTHS.TECHNOLOGY_COLUMN,
       render: (value: string) => (
         <span className="text-xs sm:text-sm font-['Inter',sans-serif] text-[#3d3b3b]">{value}</span>
       ),
@@ -171,7 +135,7 @@ export function createTecnologiaColumns({
       id: FieldTablesId.validation,
       key: FieldTablesId.validation,
       label: 'Costo de Mantenimiento por Kilómetro',
-      width: '67%',
+      width: TABLE_COLUMN_WIDTHS.VALIDATION_COLUMN_LARGE,
       render: (_value: number, row: TecnologiaTableRow) => {
         const rowKey = getRowKey(row.id);
         const rawValue = technology.validationMaintenancePerKilometer[rowKey] ?? '';
@@ -189,7 +153,7 @@ export function createTecnologiaColumns({
         const displayValue = maintenanceToggle ? defaultInputValue : rawValue;
 
         return (
-          <div className="flex items-center gap-1">
+          <ValuesContainerStyled>
             <DollarSignStyled />
             <EBusFormField
               required
@@ -198,7 +162,8 @@ export function createTecnologiaColumns({
               submitAttempted={submitAttempted ?? false}
               variant="table"
             >
-              <Input
+              <TableInput
+                variant={TableInputVariant.textSm}
                 value={formatNumberThousands(displayValue)}
                 disabled={maintenanceToggle}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -208,38 +173,13 @@ export function createTecnologiaColumns({
                   ? createDefaultValueFocusHandler(form, `technology.validationMaintenancePerKilometer.${rowKey}`)
                   : {})}
                 placeholder="Insertar valor"
-                className="flex-1 min-w-0 font-['Inter',sans-serif] text-sm bg-white border-0 outline-none
-                text-[#3d3b3b] rounded-[4px] text-right max-w-full w-full
-                disabled:cursor-not-allowed"
               />
             </EBusFormField>
-          </div>
+          </ValuesContainerStyled>
         );
       },
     },
   ];
-}
-
-interface CombustibleColumnsProps {
-  form: UseFormReturn<CalculatorFormData>;
-  fuel: {
-    price: {
-      dieselCOPGallon: string;
-      gasCOPM3: string;
-      electricityCOPKwh: string;
-    };
-    increaseRisk: {
-      dieselCOPGallon: string;
-      gasCOPM3: string;
-      electricityCOPKwh: string;
-    };
-  };
-  handleCombustibleInputChange: (
-    column: 'price' | 'increaseRisk',
-    row: 'dieselCOPGallon' | 'gasCOPM3' | 'electricityCOPKwh',
-    value: string
-  ) => void;
-  submitAttempted?: boolean;
 }
 
 export function createCombustibleColumns({
@@ -261,7 +201,7 @@ export function createCombustibleColumns({
       id: FieldTablesId.fuel,
       key: FieldTablesId.fuel,
       label: 'Combustible',
-      width: '33%',
+      width: TABLE_COLUMN_WIDTHS.TECHNOLOGY_COLUMN,
       render: (value: string) => (
         <span className="text-xs sm:text-sm font-['Inter',sans-serif] text-[#3d3b3b]">{value}</span>
       ),
@@ -270,14 +210,14 @@ export function createCombustibleColumns({
       id: FuelCostsColumnIds.price,
       key: FuelCostsColumnIds.price,
       label: 'Precio',
-      width: '33%',
+      width: TABLE_COLUMN_WIDTHS.TECHNOLOGY_COLUMN,
       render: (_value: number, row: CombustibleTableRow) => {
         const rowKey = getRowKey(row.id);
         const currentValue = fuel.price[rowKey] ?? '';
         const defaultValue = DEFAULT_VALUES.fuel.price[rowKey] ?? '';
 
         return (
-          <div className="flex items-center gap-1">
+          <ValuesContainerStyled>
             <DollarSignStyled />
             <EBusFormField
               required
@@ -286,18 +226,17 @@ export function createCombustibleColumns({
               submitAttempted={submitAttempted ?? false}
               variant="table"
             >
-              <Input
+              <TableInput
+                variant={TableInputVariant.textSm}
                 value={formatNumberThousands(currentValue)}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   handleCombustibleInputChange('price', rowKey, e.target.value)
                 }
                 {...createDefaultValueFocusHandler(form, `fuel.price.${rowKey}`)}
                 placeholder="Insertar valor"
-                className="flex-1 min-w-0 font-['Inter',sans-serif] text-sm bg-white border-0 outline-none
-                text-[#3d3b3b] rounded-[4px] text-right max-w-full w-full"
               />
             </EBusFormField>
-          </div>
+          </ValuesContainerStyled>
         );
       },
     },
@@ -305,7 +244,7 @@ export function createCombustibleColumns({
       id: FuelCostsColumnIds.increaseRisk,
       key: FuelCostsColumnIds.increaseRisk,
       label: 'Riesgo de Incremento',
-      width: '34%',
+      width: TABLE_COLUMN_WIDTHS.VALIDATION_COLUMN_MEDIUM,
       render: (_value: string, row: CombustibleTableRow) => {
         const rowKey = getRowKey(row.id);
         const isLastRow = row.id === TechnologyType.electric;

@@ -1,15 +1,14 @@
+import React from 'react';
+import { Input } from 'vizonomy';
 import { formatNumberThousands } from '@/lib/utils';
+import { getTableInputClassName, getFormInputClassName } from './CalculatorForm.utils';
+import type { TableInputProps, FormInputProps, FormButtonProps, InputFormLabelProps } from './CalculatorForm.types';
+import { TableInputVariant, FormInputVariant, FormSectionGap, ButtonWidthVariant } from './CalculatorForm.constants';
 import { EBusButton } from '../EBusButton';
 import { ICON_NAMES } from '../Icon';
 import { ICON_POSITIONS } from '../EBusButton/EBusButton.constants';
 import { TaxesButtonProps } from './CalculatorForm.types';
 import { InformationTooltip } from '../InformationTooltip';
-
-export interface InputFormLabelProps {
-  children: React.ReactNode;
-  disableTooltip?: boolean;
-  tooltipText?: string | React.ReactNode;
-}
 
 export function InputFormLabel({ children, disableTooltip = false, tooltipText = '' }: InputFormLabelProps) {
   return (
@@ -92,6 +91,71 @@ export function FormTextStyled(value: string) {
 
 export function ValuesContainerStyled({ children }: { children: React.ReactNode }) {
   return <div className="flex items-center gap-1">{children}</div>;
+}
+
+export function DisabledCell() {
+  return <div className="flex items-center gap-1 bg-[#f1f1f1] h-full min-h-[20px] battery-cell-disabled" />;
+}
+
+export function TableInput({ variant = TableInputVariant.base, ...props }: TableInputProps) {
+  const className = getTableInputClassName(variant);
+  return <Input {...props} className={className} />;
+}
+
+export function FormInput({ variant = FormInputVariant.base, ...props }: FormInputProps) {
+  const className = getFormInputClassName(variant);
+  return <Input {...props} className={className} />;
+}
+
+export function FormsContainer({ children }: { children: React.ReactNode }) {
+  return <div className="forms-container">{children}</div>;
+}
+
+export function FormSection({
+  children,
+  gap = FormSectionGap.large,
+}: {
+  children: React.ReactNode;
+  gap?: FormSectionGap;
+}) {
+  const gapClass = gap === FormSectionGap.small ? 'gap-2' : 'gap-4';
+  return <div className={`mb-6 flex flex-col ${gapClass}`}>{children}</div>;
+}
+
+export function FormButtonsContainer({ children }: { children: React.ReactNode }) {
+  return <div className="flex gap-4">{children}</div>;
+}
+
+export function FormLabelContainer({ children }: { children: React.ReactNode }) {
+  return <div className="flex flex-col gap-2">{children}</div>;
+}
+
+export function FormHeaderContainer({ children }: { children: React.ReactNode }) {
+  return <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">{children}</div>;
+}
+
+export function FormToggleContainer({ children }: { children: React.ReactNode }) {
+  return <div className="flex flex-col gap-1">{children}</div>;
+}
+
+export function FormCurrencyContainer({ children }: { children: React.ReactNode }) {
+  return <div className="w-full sm:w-[230px]">{children}</div>;
+}
+
+export function ShrinkZeroContainer({ children }: { children: React.ReactNode }) {
+  return <div className="shrink-0">{children}</div>;
+}
+
+export function FormButton({
+  variant,
+  buttonLabel,
+  onClick,
+  widthVariant = ButtonWidthVariant.flex1,
+}: FormButtonProps) {
+  const widthClass = widthVariant === ButtonWidthVariant.full ? 'w-full' : 'flex-1';
+  return (
+    <EBusButton variant={variant} buttonLabel={buttonLabel} onClick={onClick} className={`h-[40px] ${widthClass}`} />
+  );
 }
 
 function getValueContent(value: number | null | undefined, currencyPrefix: string) {
