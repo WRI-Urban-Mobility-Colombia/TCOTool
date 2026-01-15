@@ -1,7 +1,7 @@
 import { BarChartSeries } from '@/lib/BarChart';
 import { TechnologyType } from '../Calculator/CalculatorForm.constants';
 
-export const DIESEL_MULTIPLIER = 1.19;
+export const DIESEL_MULTIPLIER = 1;
 export const INCENTIVE_DIESEL = 0;
 
 export const AC_PERCENTAGE = {
